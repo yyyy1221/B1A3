@@ -48,48 +48,48 @@ int main(void){
 	FILE *client_ifp, *book_ifp, *borrow_ifp; //파일 입력을 위한 전역 변수 선언
 	FILE *client_ofp, *book_ofp, *borrow_ofp; //파일 출력을 위한 전역 변수 선언
 	
-	struct client *client = (struct client *) malloc(sizeof(client));
-	struct book *book = (struct book *) malloc(sizeof(book));
-	struct borrow *borrow = (struct borrow *) malloc(sizeof(borrow));
+	struct client *client = (struct client *) malloc(sizeof(client)); //client 구조체 포인터변수에 메모리 할당
+	struct book *book = (struct book *) malloc(sizeof(book)); //client 구조체 포인터변수에 메모리 할당
+	struct borrow *borrow = (struct borrow *) malloc(sizeof(borrow)); //client 구조체 포인터변수에 메모리 할당
 	
 	client -> next = NULL;
 	book -> next = NULL;
 	borrow -> next = NULL;
 	
-	char tmp[4][30] = {0};
+	char tmp[4][30] = {0}; //동적 메모리 할당을 위해 임시적으로 사용할 배열
 	
-	if ((client_ifp = fopen("client.txt", "r")) == NULL){
-		printf("client.txt 파일이 존재하지 않습니다.\n");
-		exit(1);
+	if ((client_ifp = fopen("client.txt", "r")) == NULL){ //client 파일 읽어오기
+		printf("client.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
+		exit(1); //프로그램 종료
 	}
-	if ((book_ifp = fopen("book.txt", "r")) == NULL){
-		printf("book.txt 파일이 존재하지 않습니다.\n");
-		exit(1);
+	if ((book_ifp = fopen("book.txt", "r")) == NULL){ //book 파일 읽어오기
+		printf("book.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
+		exit(1); //프로그램 종료
 	}
-	if ((borrow_ifp = fopen("borrow.txt", "r")) == NULL){
-		printf("borrow.txt 파일이 존재하지 않습니다.\n");
-		exit(1);
+	if ((borrow_ifp = fopen("borrow.txt", "r")) == NULL){ //borrow 파일 읽어오기
+		printf("borrow.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
+		exit(1); //프로그램 종료
 	}
-	//id | password | name | address | phone_number 
-	fscanf(client_ifp, "%d | %s | %s | %s | %s", &client -> id, tmp[0],
+	//id | password | name | address | phone_number : client 파일 데이터 형식
+	fscanf(client_ifp, "%d | %s | %s | %s | %s", &client -> id, tmp[0], //client 파일에서 한줄 fscanf로 받아와서 tmp배열에 넣어주기
 	tmp[1], tmp[2], tmp[3]);
 	
 	client -> password = (char *) malloc(strlen(tmp[0]) * sizeof(char));
 	client -> name = (char *) malloc(strlen(tmp[1]) * sizeof(char));
 	client -> address = (char *) malloc(strlen(tmp[2]) * sizeof(char));
-	client -> phone_number = (char *) malloc(strlen(tmp[3]) * sizeof(char));
+	client -> phone_number = (char *) malloc(strlen(tmp[3]) * sizeof(char)); //동적 메모리 할당
 	
 	strcpy(client -> password, tmp[0]);
 	strcpy(client -> name, tmp[1]);
 	strcpy(client -> address, tmp[2]);
-	strcpy(client -> phone_number, tmp[3]);
+	strcpy(client -> phone_number, tmp[3]); //메모리 할당한 후 배열의 내용 복사해서 넣어주기
 	
 	printf("%d %s %s %s %s", client -> id, client -> password, client -> name, client -> address, client -> phone_number);
-	
+	// 디버깅 코드	
 	
 	fclose(client_ifp);
 	fclose(book_ifp);
-	fclose(borrow_ifp);
+	fclose(borrow_ifp); //
 }
 
 	
