@@ -57,10 +57,12 @@ typedef struct borrow{ //borrow 파일의 정보를 저장하기 위한 구조�
 
 CLIENT *client_read(void);
 
-CLIENT *add_client(CLIENT *new_client, CLIENT **head, CLIENT *temp, CLIENT *tail);
+CLIENT *add_client(CLIENT *new_client, CLIENT **head, CLIENT *temp);
 
 CLIENT *create_client(unsigned id, char password[], char name[], char address[], char 
 phone_number[]);
+
+CLIENT *sort_client(CLIENT *head);
 
 /////////////////////////////////링크드 리스트 함수 선언
 
@@ -88,32 +90,29 @@ CLIENT *client_read(void){ //함수 안에서 client 파일 내용 받아와서 
 	
 	CLIENT *head; //client 구조체 포인터 변수
 	CLIENT *temp; //client 구조체 포인터 변수
-	CLIENT *tail; //client 구조체 포인터 변수
 	
 	unsigned id; //학번 (정수 8자리)
 	char password[20]; //비밀번호
 	char name[10]; //이름
 	char address[30]; //주소
 	char phone_number[20]; //전화번호	
-
 	
 	MALLOC_STRUCT(CLIENT, head); //client 구조체 포인터변수에 메모리 할당
 	MALLOC_STRUCT(CLIENT, temp); //client 구조체 포인터변수에 메모리 할당
-	MALLOC_STRUCT(CLIENT, tail); //client 구조체 포인터변수에 메모리 할당
 	
 	head -> next = NULL; //시작 부분
 	temp -> next = NULL; //이전 노드 저장
-	tail -> next = NULL; //마지막 부분
 	
 	// id | password | name | address | phone_number : client 파일 데이터 형식
 	while (fscanf(client_ifp, "%u | %s | %s | %[^|] | %s", &id, password,
 	name, address, phone_number) != EOF){  //client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
 	
 	temp = add_client(create_client(id, password, name, address, phone_number), 
-	&head, temp, tail);	
-	}	
+	&head, temp);	
+	}
+	// head = sort_client(head);
 	temp = head;	//디버깅 코드 
-	while (temp -> next != NULL){	//마지막 구조체가 가리키는게 NULL값일 때까지 (tail 전까지만)	
+	while (temp){	//마지막 구조체가 가리키는게 NULL값일 때까지 ( 전까지만)	
 		printf("%u | %s | %s | %s| %s\n", temp -> id, temp -> password,
 		temp -> name, temp -> address, temp -> phone_number);
 		temp = temp -> next; //다음 구조체로 넘어가기
@@ -126,7 +125,7 @@ CLIENT *client_read(void){ //함수 안에서 client 파일 내용 받아와서 
 	return head;
 }
 
-CLIENT *add_client(CLIENT *new_client, CLIENT **head_p, CLIENT *temp, CLIENT *tail){
+CLIENT *add_client(CLIENT *new_client, CLIENT **head_p, CLIENT *temp){
 	//**head_p로 head 포인터의 주소값을 받아와서 *head_p가 가리키는 구조체의 값을 변경해줘야됨
 	//*head로 받아오면 값에 의한 호출이라 안바뀜
 	//head는 포인터이므로 **으로 이중포인터 표현 사용
@@ -137,7 +136,7 @@ CLIENT *add_client(CLIENT *new_client, CLIENT **head_p, CLIENT *temp, CLIENT *ta
 	}
 	else {							//자료가 두번째 이후로 입력될 때
 		temp -> next = new_client;  //이전의 노드는 새로 추가된 노드를 가리킴
-		new_client -> next = tail;  //새로 추가된 노드는 마지막 노드를 가리킴
+		new_client -> next = NULL;  //새로 추가된 노드는 마지막 노드를 가리킴
 	}
 		
 	return new_client; //만들어진 노드를 가리키는 포인터를 리턴
@@ -163,6 +162,26 @@ phone_number[]){
 	
 	return new_client;
 }
+
+    // for(int i = 0; i < N - 1; i++)//비교횟수는 데이터갯수-1, 자기 자신과는 비교 하지 않음
+        // for(int j = 0; j < N - 1 - i; j++)
+            // if(num[j] > num[j + 1]){
+                // temp = num[j];//앞자리의 수가 더 크면 교체
+                // num[j] = num[j + 1];
+                // num[j + 1] = temp;
+			// }
+
+
+
+CLIENT *sort_client(CLIENT *head){
+	
+	}
+		
+		
+	
+	
+	
+	
 
 	
 	
