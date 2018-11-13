@@ -12,6 +12,12 @@
 #define SCAN_CHAR(x) scanf("%c", &x);
 #define SCAN_STRING(x) scanf("%s", s);
 
+#define PATH_CLIENT "client.txt"
+#define PATH_BOOK "book.txt"
+#define PATH_BORROW "borrow.txt"
+#define READ_MOD "rt"
+#define WRITE_MOD "wt"
+
 /////////////////////////////////매크로
 
 typedef struct client{ //client 파일의 정보를 저장하기 위한 구조체
@@ -44,6 +50,7 @@ typedef struct borrow{ //borrow 파일의 정보를 저장하기 위한 구조�
 
 /////////////////////////////////구조체 선언
 
+CLIENT * client_read(void);
 
 
 /////////////////////////////////링크드 리스트 함수 선언
@@ -66,15 +73,16 @@ int main(void){
 	
 	char tmp[4][30] = {0}; //동적 메모리 할당을 위해 임시적으로 사용할 배열
 	
-	if ((client_ifp = fopen("client.txt", "r")) == NULL){ //client 파일 읽어오기
+	if ((client_ifp = fopen(PATH_CLIENT, READ_MOD)) == NULL){ //client 파일 읽어오기
 		printf("client.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
 		exit(1); //프로그램 종료
 	}
-	if ((book_ifp = fopen("book.txt", "r")) == NULL){ //book 파일 읽어오기
+	
+	if ((book_ifp = fopen(PATH_BOOK, READ_MOD)) == NULL){ //book 파일 읽어오기
 		printf("book.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
 		exit(1); //프로그램 종료
 	}
-	if ((borrow_ifp = fopen("borrow.txt", "r")) == NULL){ //borrow 파일 읽어오기
+	if ((borrow_ifp = fopen(PATH_BORROW, READ_MOD)) == NULL){ //borrow 파일 읽어오기
 		printf("borrow.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
 		exit(1); //프로그램 종료
 	}
@@ -99,6 +107,18 @@ int main(void){
 	fclose(book_ifp);
 	fclose(borrow_ifp); //파일 닫기
 }
+
+CLIENT * client_read(void){ //함수 안에서 client 파일 내용 받아와서 CLIENT 구조체에 내용 넣는 함수 (만드는 중)
+	FILE *client_ifp; 
+	
+	if ((client_ifp = fopen(PATH_CLIENT, READ_MOD)) == NULL){ //client 파일 읽어오기
+		printf("client.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
+		exit(1); //프로그램 종료
+	}
+	
+	CLIENT *head = NULL;
+}
+	
 
 
 	
