@@ -12,16 +12,18 @@
 #define SCAN_CHAR(x) scanf("%c", &x);
 #define SCAN_STRING(x) scanf("%s", s);
 
-struct client{ //client 파일의 정보를 저장하기 위한 구조체
+/////////////////////////////////매크로
+
+typedef struct client{ //client 파일의 정보를 저장하기 위한 구조체
 	unsigned id; //학번 (정수 8자리)
 	char *password; //비밀번호
 	char *name; //이름
 	char *address; //주소
 	char *phone_number; //전화번호
 	struct client *next; //자기 참조 구조체 구현
-};
+} CLIENT;
 
-struct book{ //book 파일의 정보를 저장하기 위한 구조체
+typedef struct book{ //book 파일의 정보를 저장하기 위한 구조체
 	unsigned number; //도서번호 (정수 7자리)
 	char *name; //도서명
 	char *publisher; //출판사
@@ -30,27 +32,33 @@ struct book{ //book 파일의 정보를 저장하기 위한 구조체
 	char *location; //소장처
 	char borrow; //대여가능 여부
 	struct book *next; //자기 참조 구조체 구현
-};
+} BOOK;
 
-struct borrow{ //borrow 파일의 정보를 저장하기 위한 구조체
+typedef struct borrow{ //borrow 파일의 정보를 저장하기 위한 구조체
 	unsigned client_id; //학번 (정수 8자리)
 	unsigned book_number; //도서번호 (정수 7자리)
 	time_t borrow_date; //대여일자
 	time_t return_date; //반납일자
 	struct borrow *next; //자기 참조 구조체 구현
-};
+} BORROW;
+
+/////////////////////////////////구조체 선언
 
 
 
-//함수 선언 
+/////////////////////////////////링크드 리스트 함수 선언
+
+
+
+/////////////////////////////////함수 선언 
 
 int main(void){
 	FILE *client_ifp, *book_ifp, *borrow_ifp; //파일 입력을 위한 전역 변수 선언
 	FILE *client_ofp, *book_ofp, *borrow_ofp; //파일 출력을 위한 전역 변수 선언
 	
-	struct client *client = (struct client *) malloc(sizeof(client)); //client 구조체 포인터변수에 메모리 할당
-	struct book *book = (struct book *) malloc(sizeof(book)); //client 구조체 포인터변수에 메모리 할당
-	struct borrow *borrow = (struct borrow *) malloc(sizeof(borrow)); //client 구조체 포인터변수에 메모리 할당
+	CLIENT *client = (CLIENT *) malloc(sizeof(client)); //client 구조체 포인터변수에 메모리 할당
+	BOOK *book = (BOOK *) malloc(sizeof(book)); //client 구조체 포인터변수에 메모리 할당
+	BORROW *borrow = (BORROW *) malloc(sizeof(borrow)); //client 구조체 포인터변수에 메모리 할당
 	
 	client -> next = NULL;
 	book -> next = NULL;
@@ -89,8 +97,9 @@ int main(void){
 	
 	fclose(client_ifp);
 	fclose(book_ifp);
-	fclose(borrow_ifp); //
+	fclose(borrow_ifp); //파일 닫기
 }
+
 
 	
 	
