@@ -29,8 +29,12 @@
 
 /////////////////////////////////동적 메모리 할당 관련 매크로
 
+#define SWAP_CHAR(x, y) {char temp; temp = x; x = y; y = temp;}
+#define SWAP_INT(x, y) {int temp; temp = x; x = y; y = temp;}
+#define SWAP_UNSIGNED(x, y) {unsigned temp; temp = x; x = y; y = temp;}
+#define SWAP_UNSIGNED_LONG(x, y) {unsigned long temp; temp = x; x = y; y = temp;}
 #define SWAP_STRING(x, y) {char temp[30]; strcpy(temp, x); strcpy(x, y); strcpy(y, temp);}
-#define EMPTY_STRING(x) strcpy(x, "");
+
 
 /////////////////////////////////기타 매크로
 
@@ -79,15 +83,35 @@ void save_client(CLIENT *head);
 
 /////////////////////////////////client 관련 함수 선언
 
+BOOK *book_read(void);
+
+BOOK *add_book(BOOK *new_book, BOOK **head, BOOK *temp);
+
+BOOK *create_book(unsigned number, char name[], char publisher[], char writer[],
+	unsigned long ISBN, char location[], char borrow);
+					
+void sort_book(BOOK **head_p);
+
+void print_book(BOOK *head);
+
+void save_book(BOOK *head);
+
+/////////////////////////////////book 관련 함수 선언
 
 
 /////////////////////////////////함수 선언 
 
 int main(void) {
    CLIENT *client_head = client_read();
+   BOOK *book_head = book_read();
+   
    sort_client(&client_head);
    print_client(client_head);
    save_client(client_head);
+   
+   sort_book(&book_head);
+   print_book(book_head);
+   save_book(book_head);   
 
    return 0;
 }
@@ -111,7 +135,6 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
    char phone_number[20]; //전화번호   
 
    MALLOC_STRUCT(CLIENT, head); //client 구조체 포인터변수에 메모리 할당
-   // MALLOC_STRUCT(CLIENT, temp); //client 구조체 포인터변수에 메모리 할당
 
    head -> next = NULL; //시작 부분
    temp -> next = NULL; //이전 노드 저장
@@ -119,13 +142,10 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
    // id | password | name | address | phone_number : client 파일 데이터 형식
    //client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
    
-while (fscanf(client_ifp, "%s | %s | %s | %[^|] | %s", id, password, name, address, phone_number) != EOF) {
-      temp = add_client(create_client(id, password, name, address, phone_number), &head, temp);
-	  EMPTY_STRING(id);
-	  EMPTY_STRING(password);
-	  EMPTY_STRING(name);
-	  EMPTY_STRING(address);
-	  EMPTY_STRING(phone_number);
+while (fscanf(client_ifp, "%s | %s | %s | %[^|] | %s", id, password, name, address,
+	phone_number) != EOF) {
+	temp = add_client(create_client(id, password, name, address, phone_number),
+	&head, temp);
    }
 
    fclose(client_ifp);
@@ -200,5 +220,115 @@ void save_client(CLIENT *head){
 		head = head -> next;
 	}
 	fclose(client_ofp);
+}
+
+BOOK *book_read(void){ //함수 안에서 book 파일 내용 받아와서 BOOK 구조체에 내용 넣는 함수 
+   FILE *book_ifp; //book 파일 내용 받아오는 포인터 변수
+
+   if ((book_ifp = fopen(PATH_BOOK, READ_MOD)) == NULL) { //book 파일 읽어오기
+      printf("book.txt 파일이 존재하지 않습니다.\n"); //파일 없으면 오류 메시지 출력
+      exit(1); //프로그램 종료
+   }
+
+
+   BOOK *head; //book 구조체 포인터 변수
+   BOOK *temp; //book 구조체 포인터 변수
+
+   unsigned number; //도서번호 (정수 7자리)
+   char *name; //도서명
+   char *publisher; //출판사
+   char *writer; //저자명
+   unsigned long ISBN; //ISBN(정수 13자리)
+   char *location; //소장처
+   char borrow; //대여가능 여부
+
+   MALLOC_STRUCT(BOOK, head); //book 구조체 포인터변수에 메모리 할당
+
+   head -> next = NULL; //시작 부분
+   temp -> next = NULL; //이전 노드 저장
+
+   // number | name | publisher | writer | ISBN | location | borrow : book 파일 데이터 형식
+   //book 파일에서 한줄씩 fscanf로 받아와서 자료형에 넣어주기
+   
+while (fscanf(book_ifp, "%s | %[^|] | %[^|] | %[^|] | %lu | %s | %c", &number,
+	name, publisher, writer, &ISBN, location, &borrow) != EOF) {
+	temp = add_book(create_book(number, name, publisher, writer, ISBN, location, borrow),
+	&head, temp);
+   }
+
+   fclose(book_ifp);
+
+   return head;
+}
+
+BOOK *add_book(BOOK *new_book, BOOK **head_p, BOOK *temp) {
+   //**head_p로 head 포인터의 주소값을 받아와서 *head_p가 가리키는 구조체의 값을 변경해줘야됨
+   //*head로 받아오면 값에 의한 호출이라 안바뀜
+   //head는 포인터이므로 **으로 이중포인터 표현 사용
+   //add_book를 호출할 때 매개인자에 head의 주소값을 넣어주면 됨
+   if ((*head_p) -> next == NULL) {      //자료가 첫번째로 입력될 때
+      new_book -> next = new_book;         //새로 추가된 노드는 첫번째 노드임   
+      *head_p = new_book; //첫번째 노드는 새로 추가된 노드와 같음
+   }
+   else {                     //자료가 두번째 이후로 입력될 때
+      temp -> next = new_book;  //이전의 노드는 새로 추가된 노드를 가리킴
+      new_book -> next = NULL;  //새로 추가된 노드는 마지막 노드를 가리킴
+   }
+
+   return new_book; //만들어진 노드를 가리키는 포인터를 리턴
+}
+
+BOOK *create_book(unsigned number, char name[], char publisher[], char writer[],
+	unsigned long ISBN, char location[], char borrow) {
+   BOOK *new_book;
+
+   MALLOC_STRUCT(BOOK, new_book); //book 구조체 포인터변수에 메모리 할당
+   MALLOC_CHAR(new_book, name); //new_book -> name에 메모리 할당
+   MALLOC_CHAR(new_book, publisher); //new_book -> publisher에 메모리 할당
+   MALLOC_CHAR(new_book, writer); //new_book -> writer에 메모리 할당
+   MALLOC_CHAR(new_book, location); //new_book -> location에 메모리 할당
+   
+   new_book -> number = number;
+   strcpy(new_book -> name, name);
+   strcpy(new_book -> publisher, publisher);
+   strcpy(new_book -> writer, writer);
+   new_book -> ISBN = ISBN;
+   strcpy(new_book -> location, location);
+   new_book -> borrow = borrow;
+   new_book -> next = NULL;
+
+   return new_book;
+}
+					
+void sort_book(BOOK **head_p){
+	for (BOOK *i = *head_p; i -> next != NULL; i = i -> next)
+		for (BOOK *j = *head_p; j -> next != NULL; j = j -> next)
+			if (j -> number > j -> next -> number){
+				SWAP_UNSIGNED(j -> number, j -> next -> number)
+				SWAP_STRING(j -> name, j -> next -> name);
+				SWAP_STRING(j -> publisher, j -> next -> publisher);
+				SWAP_STRING(j -> writer, j -> next -> writer);
+				SWAP_UNSIGNED_LONG(j -> ISBN, j -> next -> ISBN);
+				SWAP_STRING(j -> location, j -> next -> location);
+				SWAP_CHAR(j -> borrow, j -> next -> borrow);
+			}
+}
+
+void print_book(BOOK *head){
+	while (head){
+		printf("%u | %s | %s | %s | %lu | %s | %c\n", head -> number, head -> name, head -> publisher, 
+		head -> writer, head -> ISBN, head -> location, head -> borrow);
+		head = head -> next;
+	}
+}	
+
+void save_book(BOOK *head){
+	FILE *book_ofp = fopen(PATH_BOOK, WRITE_MOD);
+	while(head){
+		fprintf(book_ofp, "%u | %s | %s | %s | %lu | %s | %c\n", head -> number, head -> name, head -> publisher, 
+		head -> writer, head -> ISBN, head -> location, head -> borrow);
+		head = head -> next;
+	}
+	fclose(book_ofp);
 }
 	
