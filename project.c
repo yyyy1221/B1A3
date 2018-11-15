@@ -75,7 +75,9 @@ void sort_client(CLIENT **head_p);
 
 void print_client(CLIENT *head);
 
-/////////////////////////////////링크드 리스트 함수 선언
+void save_client(CLIENT *head);
+
+/////////////////////////////////client 관련 함수 선언
 
 
 
@@ -83,9 +85,9 @@ void print_client(CLIENT *head);
 
 int main(void) {
    CLIENT *client_head = client_read();
-   print_client(client_head);
    sort_client(&client_head);
    print_client(client_head);
+   save_client(client_head);
 
    return 0;
 }
@@ -117,7 +119,7 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
    // id | password | name | address | phone_number : client 파일 데이터 형식
    //client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
    
-while (fscanf(client_ifp, "%[^|\n] | %[^|\n] | %[^|\n] | %[^|\n] | %[^|\n] | %[^|\n]", id, password, name, address, phone_number) != EOF) {
+while (fscanf(client_ifp, "%s | %s | %s | %[^|] | %s", id, password, name, address, phone_number) != EOF) {
       temp = add_client(create_client(id, password, name, address, phone_number), &head, temp);
 	  EMPTY_STRING(id);
 	  EMPTY_STRING(password);
@@ -184,52 +186,19 @@ void sort_client(CLIENT **head_p){
 
 void print_client(CLIENT *head){
 	while (head){
-		printf("%s| %s| %s| %s| %s\n", head -> id, head -> password, head -> name, 
+		printf("%s | %s | %s | %s| %s\n", head -> id, head -> password, head -> name, 
 		head -> address, head -> phone_number);
 		head = head -> next;
-	}			
+	}		
 }	
 
-
-// CLIENT *sort_client(CLIENT *head) { 포기
-	// CLIENT *start, *previous, *current, *after, *temp, *i, *j;
+void save_client(CLIENT *head){
+	FILE *client_ofp = fopen(PATH_CLIENT, WRITE_MOD);
+	while(head){
+		fprintf(client_ofp, "%s | %s | %s | %s|%s\n", head -> id, head -> password, head -> name,
+		head -> address, head -> phone_number);
+		head = head -> next;
+	}
+	fclose(client_ofp);
+}
 	
-	// start = head;
-	// previous = head;
-	
-	// for (i = head; i -> next != NULL; i = i -> next){ 
-		// if (i -> next -> next != NULL)
-			// after = i -> next -> next;
-		// for (j = i; j -> next != NULL; j = j -> next){
-			// if (j -> id > j -> next -> id){
-				// if (j == head){
-					// putchar('a');
-					// temp = j -> next;
-					// j -> next = after;
-					// temp -> next = j;
-					// start = temp;					
-				// }
-				// else if (j -> next -> next == NULL){
-					// putchar('b');
-					// temp = j -> next;
-					// j -> next = NULL;
-					// previous -> next = temp;						
-				// }
-				// else {
-					// putchar('c');
-					// temp = j -> next;
-					// j -> next = after;
-					// previous -> next = temp;
-					// temp -> next = j;
-				// }
-			// }
-			// previous = previous -> next;
-			// if (after -> next)
-				// after = after -> next;
-		// }		
-		// if (i != start)
-			// previous = previous -> next;			
-	// }
-	
-	// return start;
-// }
