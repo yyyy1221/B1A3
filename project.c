@@ -183,12 +183,11 @@ void sort_client(CLIENT **head_p){
 }
 
 void print_client(CLIENT *head){
-	CLIENT *temp = head;
-	while (temp){
-		printf("%s| %s| %s| %s| %s\n", temp -> id, temp -> password, temp -> name, 
-		temp -> address, temp -> phone_number);
-		temp = temp -> next;
-	}		
+	while (head){
+		printf("%s| %s| %s| %s| %s\n", head -> id, head -> password, head -> name, 
+		head -> address, head -> phone_number);
+		head = head -> next;
+	}			
 }	
 
 
