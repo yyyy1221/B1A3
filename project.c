@@ -25,8 +25,8 @@
 
 /////////////////////////////////파일 관련 매크로
 
-#define MALLOC_CHAR(x, y) x -> y = (char *) malloc(strlen(y) * sizeof(char))
-#define REALLOC_CHAR(x, y) x -> y = (char *) realloc(x -> y, strlen(y) * sizeof(char))
+#define MALLOC_CHAR(x, y) (x) -> y = (char *) malloc(strlen(y) * sizeof(char))
+#define REALLOC_CHAR(x, y) (x) -> y = (char *) realloc((x) -> y, strlen(y) * sizeof(char))
 #define MALLOC_STRUCT(x,y) y = (x *) malloc(sizeof(x))
 
 /////////////////////////////////동적 메모리 할당 관련 매크로
@@ -101,7 +101,11 @@ int checkpw_client(CLIENT *head, char password[]); //id 말고 password 리턴�
  
 int login_client(CLIENT *head); //로그인 한 뒤 head에서 몇번 움직여야 내 정보로 갈 수 있는지 리턴하는 함수
 
-void edit_client(CLIENT *head); //내 회원 정보를 수정하는 함수
+void edit_client(CLIENT **head_p); //내 회원 정보를 수정하는 함수
+
+void remove_client(CLIENT **head_p); //회원 탈퇴 함수
+
+void logout_client(void);
 
 /////////////////////////////////client 관련 함수 선언
 
@@ -123,16 +127,17 @@ void edit_client(CLIENT *head); //내 회원 정보를 수정하는 함수
 
 /////////////////////////////////함수 선언 
 
-int my_account; //로그인 정보를 저장할 전역 변수
+int my_account = 0; //로그인 정보를 저장할 전역 변수
 
 int main(void) {
 	CLIENT *client_head = client_read();
 	  
 	// signup_client(client_head);
 	my_account = login_client(client_head); 
-	edit_client(client_head);
+	// remove_client(&client_head);
+	edit_client(&client_head);
 	print_one_client(client_head);
-	// print_all_client(client_head);
+	print_all_client(client_head);
 	save_client(client_head);
 
 	return 0;
@@ -153,8 +158,8 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
 	char id[10]; //학번 (정수 8자리)
 	char password[20]; //비밀번호
 	char name[10]; //이름
-	char address[50]; //주소
-	char phone_number[20]; //전화번호   
+	char address[100]; //주소
+	char phone_number[30]; //전화번호   
 
 	MALLOC_STRUCT(CLIENT, head); //client 구조체 포인터변수에 메모리 할당
 	MALLOC_STRUCT(CLIENT, temp);
@@ -264,7 +269,7 @@ void signup_client(CLIENT *head){
 	char id[10]; //학번 (정수 8자리)
 	char password[20]; //비밀번호
 	char name[10]; //이름
-	char address[50]; //주소
+	char address[100]; //주소
 	char phone_number[20]; //전화번호  
 		
 	printf("\n>> 회원 가입 <<\n");
@@ -346,14 +351,46 @@ int login_client(CLIENT *head){
 	
 	return res;
 }
+
+void logout_client(void){
+	printf("\n>> 로그아웃 되었습니다.\n<<");
+	my_account = 0;
+}
+
+void remove_client(CLIENT **head_p){
+	CLIENT *previous = *head_p, *after = *head_p, *temp;
+	
+	if (my_account == 0){
+		temp = (*head_p) -> next;
+		free((*head_p) -> id);
+		free((*head_p) -> password);
+		free((*head_p) -> name);
+		free((*head_p) -> address);
+		free((*head_p) -> phone_number);
+		free((*head_p));
+		(*head_p) = temp;
+	}
+	else {		
+		for (int i = 0; i < my_account - 1; i++){
+			previous = previous -> next;
+		}
 		
-void edit_client(CLIENT *head){
+		for (int i = 0; i < my_account + 1; i++){
+			after = after -> next;
+		}
+		previous -> next = after;
+	}	
+}
+		
+void edit_client(CLIENT **head_p){
+	CLIENT *temp = *head_p;
+	
 	char password[20]; //비밀번호
-	char address[50]; //주소
+	char address[100]; //주소
 	char phone_number[20]; //전화번호 
 	
 	printf("\n>> 개인정보 수정 <<\n");
-	print_one_client(head);
+	print_one_client((*head_p));
 	printf("\n수정할 정보를 입력해주세요\n");
 	printf("비밀번호 : ");	
 	SCAN_STRING(password);
@@ -363,16 +400,26 @@ void edit_client(CLIENT *head){
 	printf("전화번호 : ");
 	SCAN_STRING(phone_number);
 	
-	for (int i = 0; i < my_account; i++)
-		head = head -> next;
 	
-	MALLOC_CHAR(head, password); //head -> password에 메모리 할당 //왜 이거 안되는지 이해가 안가 ㅡ.ㅡ
-	MALLOC_CHAR(head, address); //head -> address에 메모리 할당
-	MALLOC_CHAR(head, phone_number); //head -> phone_number에 메모리 할당
+	address[strlen(address)] = ' '; //주소 마지막칸 띄어쓰기 해주기
+	address[strlen(address) + 1] = '\0'; //널문자 넣어주기
+	
+	for (int i = 0; i < my_account; i++)
+		*head_p = (*head_p) -> next;
+	
+	free((*head_p) -> password);
+	free((*head_p) -> address);
+	free((*head_p) -> phone_number);
+	
+	MALLOC_CHAR(*head_p, password); //head -> password에 메모리 할당 //왜 이거 안되는지 이해가 안가 ㅡ.ㅡ
+	MALLOC_CHAR(*head_p, address); //head -> address에 메모리 할당
+	MALLOC_CHAR(*head_p, phone_number); //head -> phone_number에 메모리 할당
 
-	strcpy(head -> password, password);
-	strcpy(head -> address, address);
-	strcpy(head -> phone_number, phone_number);
+	strcpy((*head_p) -> password, password);
+	strcpy((*head_p) -> address, address);
+	strcpy((*head_p) -> phone_number, phone_number);
+	
+	(*head_p) = temp;
 }
 	
 	
