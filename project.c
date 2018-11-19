@@ -35,9 +35,8 @@
 #define SWAP_INT(x, y) {int temp; temp = x; x = y; y = temp;}
 #define SWAP_UNSIGNED(x, y) {unsigned temp; temp = x; x = y; y = temp;}
 #define SWAP_UNSIGNED_LONG(x, y) {unsigned long temp; temp = x; x = y; y = temp;}
-#define SWAP_STRING(x, y) {char *temp = (char *) malloc(100 * sizeof(char));\
-						   strcpy(temp, x); strcpy(x, y); strcpy(y, temp);\
-						   free(temp);}
+#define SWAP_STRING(x, y) {char temp[100]; strcpy(temp, x); strcpy(x, y); strcpy(y, temp);}
+#define SWAP_CLIENT(x, y) {CLIENT *temp; temp = x; x = y; y = temp;}
 						  
 /////////////////////////////////SWAP 관련 매크로
 						  
@@ -84,7 +83,9 @@ CLIENT *create_client(char id[], char password[], char name[], char address[], c
    
 void add_client(CLIENT *new_client, CLIENT **head); //새로운 구조체를 링크드 리스트에 연결해주는 함수
 
-void sort_client(CLIENT *head); //client 링크드 리스트를 학번순으로 정렬
+CLIENT *sort_client(CLIENT *head); //client 링크드 리스트를 학번순으로 정렬
+
+int compare_client(const void *p, const void *q); //qsort에 사용할 compare 함수
 
 void print_all_client(CLIENT *head); //client 링크드 리스트의 내용을 전부 출력
 
@@ -94,18 +95,22 @@ void save_client(CLIENT *head); //client 파일에 메모리에 있는 client �
 
 void signup_client(CLIENT *head); //회원가입용 함수
 
+int checkname_client(CLIENT *head, char name[]); //client 파일 같은 이름이 몇번째에 있는지 리턴
+
 int checkid_client(CLIENT *head, char id[]); //client 파일에 매개 인자로 받은 학번과 중복 학번이 없으면 -1을 리턴, 있으면
  // head에서 몇번 움직여야 중복인게 나오는지 숫자를 리턴하는 함수
  
 int checkpw_client(CLIENT *head, char password[]); //id 말고 password 리턴하는 함수
  
-int login_client(CLIENT *head); //로그인 한 뒤 head에서 몇번 움직여야 내 정보로 갈 수 있는지 리턴하는 함수
+void login_client(CLIENT *head); //로그인 한 뒤 head에서 몇번 움직여야 내 정보로 갈 수 있는지 my_account에 저장하는 함수
 
 void edit_client(CLIENT **head_p); //내 회원 정보를 수정하는 함수
 
 void remove_client(CLIENT **head_p); //회원 탈퇴 함수
 
-void logout_client(void);
+void logout_client(void); //로그아웃 함수
+
+
 
 /////////////////////////////////client 관련 함수 선언
 
@@ -124,21 +129,28 @@ void logout_client(void);
 
 /////////////////////////////////book 관련 함수 선언
 
+void main_menu_print(void);
 
-/////////////////////////////////함수 선언 
+void main_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head);
+
+void client_menu_print(void);
+
+void client_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head);
+
+void admin_menu_print(void);
+
+void admin_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head);
+
+/////////////////////////////////메뉴 함수 선언 
 
 int my_account = 0; //로그인 정보를 저장할 전역 변수
 
 int main(void) {
 	CLIENT *client_head = client_read();
+	BOOK *book_head;
+	BORROW *borrow_head;
 	  
-	// signup_client(client_head);
-	my_account = login_client(client_head); 
-	// remove_client(&client_head);
-	edit_client(&client_head);
-	print_one_client(client_head);
-	print_all_client(client_head);
-	save_client(client_head);
+	main_menu(client_head, book_head, borrow_head);
 
 	return 0;
 }
@@ -171,12 +183,17 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
 	//client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
 
 	while (fscanf(client_ifp, "%s | %s | %s | %[^|] | %s", id, password, name, address,
-	phone_number) != EOF) 
+	phone_number) != EOF){
 		add_client(create_client(id, password, name, address, phone_number), &head);
+	}
 		//create_client를 통해
 	fclose(client_ifp);
 	
-	sort_client(head);
+	// print_all_client(head);
+	head = sort_client(head);
+	
+	free(head);
+	free(temp);
 
 	return head;
 }
@@ -204,36 +221,103 @@ void add_client(CLIENT *new_client, CLIENT **head_p) {
 
 CLIENT *create_client(char id[], char password[], char name[], char address[], char
    phone_number[]) {
-   CLIENT *new_client;
+	CLIENT *new_client;
 
-   MALLOC_STRUCT(CLIENT, new_client); //client 구조체 포인터변수에 메모리 할당
-   
-   MALLOC_CHAR(new_client, id);
-   MALLOC_CHAR(new_client, password); //new_client -> password에 메모리 할당
-   MALLOC_CHAR(new_client, name); //new_client -> name에 메모리 할당
-   MALLOC_CHAR(new_client, address); //new_client -> address에 메모리 할당
-   MALLOC_CHAR(new_client, phone_number); //new_client -> phone_number에 메모리 할당
+	MALLOC_STRUCT(CLIENT, new_client); //client 구조체 포인터변수에 메모리 할당
 
-   strcpy(new_client -> id, id);
-   strcpy(new_client -> password, password);
-   strcpy(new_client -> name, name);
-   strcpy(new_client -> address, address);
-   strcpy(new_client -> phone_number, phone_number);
-   new_client -> next = NULL;
+	MALLOC_CHAR(new_client, id);
+	MALLOC_CHAR(new_client, password); //new_client -> password에 메모리 할당
+	MALLOC_CHAR(new_client, name); //new_client -> name에 메모리 할당
+	MALLOC_CHAR(new_client, address);
+	MALLOC_CHAR(new_client, phone_number); //new_client -> phone_number에 메모리 할당
 
-   return new_client;
+	strcpy(new_client -> id, id);
+	strcpy(new_client -> password, password);
+	strcpy(new_client -> name, name);
+	strcpy(new_client -> address, address);
+	strcpy(new_client -> phone_number, phone_number);
+	new_client -> next = NULL;
+
+	return new_client;
 }
 
-void sort_client(CLIENT *head){
-	for (CLIENT *i = head; i -> next != NULL; i = i -> next)
-		for (CLIENT *j = head; j -> next != NULL; j = j -> next)
-			if (atoi(j -> id) > atoi(j -> next -> id)){
-				SWAP_STRING(j -> id, j -> next -> id);
-				SWAP_STRING(j -> password, j -> next -> password);
-				SWAP_STRING(j -> name, j -> next -> name);
-				SWAP_STRING(j -> address, j -> next -> address);
-				SWAP_STRING(j -> phone_number, j -> next -> phone_number);
-			}
+// void sort_client(CLIENT *head){
+	// for (CLIENT *i = head; i -> next != NULL; i = i -> next)
+		// for (CLIENT *j = head; j -> next != NULL; j = j -> next)
+			// if (atoi(j -> id) > atoi(j -> next -> id)){
+				// SWAP_STRING(j -> id, j -> next -> id);
+				// SWAP_STRING(j -> password, j -> next -> password);
+				// SWAP_STRING(j -> name, j -> next -> name);
+				// SWAP_STRING(j -> address, j -> next -> address);
+				// SWAP_STRING(j -> phone_number, j -> next -> phone_number);
+			// }
+// }
+
+// void sort_client(CLIENT **head_p){
+	// CLIENT *i, *j, *temp1, *temp2;
+	
+	// for (i = *head_p; i -> next != NULL; i = i -> next)
+		// for (j = i; j -> next != NULL; j = j -> next){
+			// if (j == i){
+				// if (j -> id > j -> next -> id){
+					// putchar('1');
+					// temp1 = j -> next; //2 저장
+					// j -> next = j -> next -> next; //1 -> 3
+					// temp1 -> next = j; //2 -> 1
+					// (*head_p) = temp1; //2 -> 1 -> 3으로 바뀌었으므로 이제 2가 첫번째
+				// }
+			// }
+			// else if (j -> next -> next -> next == NULL){
+				// if (j -> next -> id > j -> next -> next -> id){
+					// putchar('2');
+					// temp1 = j -> next; // 6
+					// j -> next = j -> next -> next; // 5 -> 7
+					// j -> next -> next = temp1; // 5 -> 7 -> 6
+					// j -> next -> next -> next = NULL; // 5 -> 7 -> 6 -> NULL
+				// }
+			// }
+			// else {
+				// if (j -> next -> id > j -> next -> next -> id){
+					// putchar('3');
+					// temp1 = j -> next; //2
+					// temp2 = j -> next -> next -> next; //4
+					// j -> next = j -> next -> next; //1 -> 3
+					// j -> next -> next = temp1; // 1 -> 3 -> 2
+					// j -> next -> next -> next = temp2; // 1-> 3 -> 2 -> 4
+				// }
+			// }
+		// }
+// }
+
+CLIENT *sort_client(CLIENT *head){
+	CLIENT *temp = head;
+	
+	int i, j, cnt = 0;
+	
+	while(temp){
+		temp = temp -> next;
+		cnt++;
+	}
+	
+	CLIENT **sort = (CLIENT **) malloc(sizeof(CLIENT *) * cnt);
+	
+	for (i = 0, temp = head; i < cnt; temp = temp -> next)
+		sort[i++] = temp;
+	
+	for (i = 0; i < cnt - 1; i++){
+		for (j = i + 1; j < cnt; j++){
+			if (atoi(sort[i] -> id) > atoi(sort[j] -> id))
+				SWAP_CLIENT(sort[i], sort[j]);
+		}
+	}
+	
+	head = sort[0];
+	
+	for (i = 1, temp = head; i < cnt && temp; temp = temp -> next)
+		temp -> next = sort[i++];
+	temp -> next = NULL;
+	
+	return head;
 }
 
 void print_all_client(CLIENT *head){
@@ -294,8 +378,22 @@ void signup_client(CLIENT *head){
 	SCAN_STRING(phone_number); //전화번호 입력받기
 	
 	add_client(create_client(id, password, name, address, phone_number), &head);
-	sort_client(head);
+	head = sort_client(head);
 	save_client(head);
+}
+
+int checkname_client(CLIENT *head, char name[]){
+	int res = -1;
+	int cnt = 0;
+	
+	while (head){
+		if (!strcmp(name, head -> name))
+			res = cnt;
+		head = head -> next;
+		cnt++;
+	}
+	
+	return res;
 }
 
 int checkid_client(CLIENT *head, char id[]){
@@ -326,7 +424,7 @@ int checkpw_client(CLIENT *head, char password[]){
 	return res;
 }
 
-int login_client(CLIENT *head){
+void login_client(CLIENT *head){
 	char id[10];
 	char password[20];
 	
@@ -338,7 +436,8 @@ int login_client(CLIENT *head){
 	printf("비밀번호 : ");
 	SCAN_STRING(password);
 	
-	while ((res = checkid_client(head, id)) != checkpw_client(head, password)){
+	while ((res = checkid_client(head, id)) != checkpw_client(head, password)
+			|| res == -1){
 		printf("아이디 혹은 비밀번호가 틀렸습니다.\n");
 		printf("다시 입력해주세요.\n\n");
 		printf("학번 : ");
@@ -349,11 +448,11 @@ int login_client(CLIENT *head){
 	
 	printf("\n>> 로그인 성공 <<\n");
 	
-	return res;
+	my_account = res;
 }
 
 void logout_client(void){
-	printf("\n>> 로그아웃 되었습니다.\n<<");
+	printf("\n>> 로그아웃 되었습니다.<<\n");
 	my_account = 0;
 }
 
@@ -361,6 +460,7 @@ void remove_client(CLIENT **head_p){
 	CLIENT *previous = *head_p, *after = *head_p, *temp;
 	
 	if (my_account == 0){
+		putchar('A');
 		temp = (*head_p) -> next;
 		free((*head_p) -> id);
 		free((*head_p) -> password);
@@ -380,6 +480,10 @@ void remove_client(CLIENT **head_p){
 		}
 		previous -> next = after;
 	}	
+	
+	logout_client();
+	
+	printf("탈퇴되었습니다.\n");
 }
 		
 void edit_client(CLIENT **head_p){
@@ -406,12 +510,13 @@ void edit_client(CLIENT **head_p){
 	
 	for (int i = 0; i < my_account; i++)
 		*head_p = (*head_p) -> next;
+	// print_one_client(*head_p);
 	
-	free((*head_p) -> password);
-	free((*head_p) -> address);
-	free((*head_p) -> phone_number);
+	// free((*head_p) -> name); //왜 이거 안되는지 이해가 안가 ㅡ.ㅡ
+	// free((*head_p) -> address);
+	// free((*head_p) -> phone_number);
 	
-	MALLOC_CHAR(*head_p, password); //head -> password에 메모리 할당 //왜 이거 안되는지 이해가 안가 ㅡ.ㅡ
+	MALLOC_CHAR(*head_p, password); //head -> password에 메모리 할당 
 	MALLOC_CHAR(*head_p, address); //head -> address에 메모리 할당
 	MALLOC_CHAR(*head_p, phone_number); //head -> phone_number에 메모리 할당
 
@@ -421,6 +526,141 @@ void edit_client(CLIENT **head_p){
 	
 	(*head_p) = temp;
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void main_menu_print(void){ // 메뉴 프린트 함수
+   printf("\n>> 도서관 서비스 <<\n");
+   printf("1. 회원가입   2. 로그인   3. 프로그램 종료\n");
+   printf("번호를 선택하세요 : ");
+}
+
+
+void main_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){ // 초기 메인 메뉴
+	int num;
+	while(1){
+		main_menu_print();
+		scanf("%d", &num);
+		switch(num){
+			case 1:
+				signup_client(client_head);
+				save_client(client_head);
+				//회원가입
+				break;
+			case 2:
+				login_client(client_head);
+				if (my_account)
+					client_menu(client_head, book_head, borrow_head);
+				else
+					admin_menu(client_head, book_head, borrow_head);
+				//로그인
+				break;
+			case 3:
+				exit(0);
+				//프로그램 종료
+			default :
+				printf("잘못된 번호입니다. 다시 입력하세요");
+				sleep(2);
+				system("clear");
+		}
+	}
+}
+   
+void client_menu_print(void){ //회원 메뉴 프린트 함수
+   printf("\n>> 회원 메뉴 <<\n");
+   printf("1. 도서 검색      2. 내 대여 목록\n");
+   printf("3. 개인정보 수정      4. 회원 탈퇴\n");
+   printf("5. 로그아웃      6. 프로그램 종료\n");
+}
+
+void client_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){ //회원 메뉴 전체
+	int num;
+	while(1){
+		client_menu_print();
+		scanf("%d", &num);
+		switch(num){
+			case 1:
+				//도서검색
+				break;
+			case 2:
+				//내 대여 목록
+				break;
+			case 3:
+				edit_client(&client_head);
+				save_client(client_head);
+				//개인정보 수정
+				break;
+			case 4:
+				remove_client(&client_head);
+				save_client(client_head);
+				//회원 탈퇴
+				return;
+			case 5:
+				logout_client();
+				//로그아웃
+				return;
+			case 6:
+				exit(0);
+				//프로그램 종료
+			default :
+				printf("잘못된 번호입니다. 다시 입력하세요");
+				sleep(2);
+				system("clear");
+		}
+	}
+}
+   
+void admin_menu_print(void){
+   printf("\n>> 관리자 메뉴 <<\n");
+   printf("1. 도서 등록      2. 도서 삭제");
+   printf("3. 도서 대여      4. 도서 반납");
+   printf("5. 도서 검색      6. 회원 목록");
+   printf("7. 로그아웃      8. 프로그램 종료");
+}
+
+void admin_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){
+	int num;
+	while(1){
+		admin_menu_print();
+		scanf("%d", &num);
+		switch(num){
+			case 1:				
+				//도서 등록
+				break;
+			case 2:
+				//도서 삭제
+				break;
+			case 3:
+				//도서 대여
+				break;
+			case 4:
+				//도서 반납
+				break;
+			case 5:
+				//도서 검색
+				break;
+			case 6:
+				print_all_client(client_head);
+				//회원 목록
+				break;
+			case 7:
+				logout_client();
+				//로그아웃
+				return;
+			case 8:
+				exit(0);
+				//프로그램 종료
+			 default :
+				printf("잘못된 번호입니다. 다시 입력하세요");
+				sleep(2);
+				system("clear");
+		}
+	}
+}
+   		
 	
 	
 
