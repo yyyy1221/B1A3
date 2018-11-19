@@ -269,6 +269,8 @@ CLIENT *sort_client(CLIENT *head){
 		temp -> next = sort[i++];
 	temp -> next = NULL;
 	
+	free(sort);
+	
 	return head;
 }
 
