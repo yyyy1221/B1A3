@@ -160,13 +160,14 @@ void booksearch_menu_print(void);
 int my_account = 0; //로그인 정보를 저장할 전역 변수
 
 int main(void) {
-	// CLIENT *client_head = client_read();
+	CLIENT *client_head = client_read();
 	BOOK *book_head = book_read();
 	BORROW *borrow_head;
 
-	total_search(book_head);
+	// total_search(book_head);
+	// print_all_client(client_head);
 
-	// main_menu(client_head, book_head, borrow_head);
+	main_menu(client_head, book_head, borrow_head);
 
 	return 0;
 }
@@ -181,7 +182,6 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
 
 
 	CLIENT *head; //client 구조체 포인터 변수
-	CLIENT *temp; //client 구조체 포인터 변수
 
 	char id[10]; //학번 (정수 8자리)
 	char password[20]; //비밀번호
@@ -190,10 +190,8 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
 	char phone_number[30]; //전화번호   
 
 	MALLOC_STRUCT(CLIENT, head); //client 구조체 포인터변수에 메모리 할당
-	MALLOC_STRUCT(CLIENT, temp);
 
 	head -> next = NULL; //시작 부분
-	temp -> next = NULL; //이전 노드 저장
 
 	// id | password | name | address | phone_number : client 파일 데이터 형식
 	//client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
@@ -205,9 +203,6 @@ CLIENT *client_read(void) { //함수 안에서 client 파일 내용 받아와서
 	fclose(client_ifp);
 	
 	head = sort_client(head);
-	
-	free(head);
-	free(temp);
 
 	return head;
 }
@@ -495,10 +490,6 @@ void edit_client(CLIENT **head_p){
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-int book_number_check(BOOK *head){
-  
-}
-
 BOOK *book_read(void) { //함수 안에서 book 파일 내용 받아와서 BOOK 구조체에 내용 넣는 함수
 	FILE *book_ifp; //book 파일 내용 받아오는 포인터 변수
 
@@ -612,6 +603,10 @@ BOOK *sort_book(BOOK *head){
 	free(sort);
 	
 	return head;
+}
+
+int book_number_check(BOOK *head){
+	
 }
 
 // void bookname_search(BOOK *head){
@@ -753,7 +748,6 @@ void main_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){ // �
 		CLEAR_BUFFER;
 		switch(num){
 			case 1:
-				print_all_client(client_head);
 				signup_client(client_head);
 				save_client(client_head);
 				//회원가입
@@ -872,7 +866,7 @@ void admin_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){
 }
 
 void search_menu_print(void){
-	printf("\n>>회원 목록 << \n");
+	printf("\n>> 회원 목록 << \n");
 	printf("1. 이름 검색	2. 학번 검색\n");
 	printf("3. 전체 검색	4. 이전 메뉴\n");
 }
