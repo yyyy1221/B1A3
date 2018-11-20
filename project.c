@@ -112,6 +112,8 @@ void remove_client(CLIENT **head_p); //회원 탈퇴 함수
 
 void logout_client(void); //로그아웃 함수
 
+void cal_time();
+
 /////////////////////////////////client 관련 함수 선언
 
 BOOK *book_read(void);
@@ -919,6 +921,70 @@ void booksearch_menu_print(void){
    printf("5. 전체 검색 6. 이전 메뉴\n");
 }
 
+void cal_time(void){
+	struct tm *t;
+	time_t now;
+	time_t RETURN;
+	char *day;
+	int flag = 0;
+	now = time(NULL);
+	t = localtime(&now);
+	switch(t -> tm_wday){
+		case 0:
+			day = "일";
+			break;
+		case 1:
+			day = "월";
+			break;
+		case 2:
+			day = "화";
+			break;
+		case 3:
+			day = "수";
+			break;
+		case 4:
+			day = "목";
+			break;
+		case 5:
+			day = "금";
+			break;
+		case 6:
+			day = "토";
+			break;
+	}
+	printf("대여일자 : %d년 %d월 %d일 %s요일\n", 1900 + t -> tm_year, t -> tm_mon + 1, t -> tm_mday, day);
+	
+	RETURN = time(NULL) + (60 * 60 * 24 * 30);
+	t = localtime(&RETURN);
+	if ((t -> tm_wday) == 0)
+		RETURN = (time(NULL) + ( 60 * 60 * 24 * 29));
+	t = localtime(&RETURN);
+	switch(t -> tm_wday){
+		case 0:
+			day = "일";
+			break;
+		case 1:
+			day = "월";
+			break;
+		case 2:
+			day = "화";
+			break;
+		case 3:
+			day = "수";
+			break;
+		case 4:
+			day = "목";
+			break;
+		case 5:
+			day = "금";
+			break;
+		case 6:
+			day = "토";
+			break;
+	}
+	
+	printf("반납일자 : %d년 %d월 %d일 %s요일\n", 1900 + t -> tm_year, t -> tm_mon + 1, t -> tm_mday, day);
+}
    		
 	
 	
