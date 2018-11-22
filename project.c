@@ -87,8 +87,6 @@ void add_client(CLIENT *new_client, CLIENT **head); //새로운 구조체를 링
 
 CLIENT *sort_client(CLIENT *head); //client 링크드 리스트를 학번순으로 정렬
 
-int compare_client(const void *p, const void *q); //qsort에 사용할 compare 함수
-
 void print_all_client(CLIENT *head); //client 링크드 리스트의 내용을 전부 출력
 
 void print_one_client(CLIENT *head, int location); //clinet 링크드 리스트의 내용을 하나만 출력
@@ -99,14 +97,15 @@ void signup_client(CLIENT *head); //회원가입용 함수
 
 int checkname_client(CLIENT *head, char name[]); //client 파일 같은 이름이 몇번째에 있는지 리턴
 
-int checkid_client(CLIENT *head, char id[]); //client 파일에 매개 인자로 받은 학번과 중복 학번이 없으면 -1을 리턴, 있으면
- // head에서 몇번 움직여야 중복인게 나오는지 숫자를 리턴하는 함수
+int checkid_client(CLIENT *head, char id[]);
+//  client 파일에 매개 인자로 받은 학번과 중복 학번이 없으면 -1을 리턴, 있으면
+//  head에서 몇번 움직여야 중복인게 나오는지 숫자를 리턴하는 함수
  
 int checkpw_client(CLIENT *head, char password[]); //id 말고 password 리턴하는 함수
  
 void login_client(CLIENT *head); //로그인 한 뒤 head에서 몇번 움직여야 내 정보로 갈 수 있는지 my_account에 저장하는 함수
 
-void edit_client(CLIENT **head_p); //내 회원 정보를 수정하는 함수
+void edit_client(CLIENT *head); //내 회원 정보를 수정하는 함수
 
 void remove_client(CLIENT **head_p); //회원 탈퇴 함수
 
@@ -116,14 +115,23 @@ void logout_client(void); //로그아웃 함수
 
 BOOK *book_read(void);
 
-BOOK *create_book(unsigned number, char name[], char publisher[], char writer[], char
-	ISBN[], char location[], char borrow);
+BOOK *create_book(unsigned number, char name[], char publisher[], char writer[], char ISBN[], char location[], char borrow);
 
 void add_book(BOOK *new_book, BOOK **head_p);
 
+void insert_book(BOOK *);
+
 BOOK *sort_book(BOOK *head);
 
+void save_book(BOOK *head);
+
+void remove_book(BOOK **head_p, int location);
+
 int book_number_check(BOOK *head);
+
+int checknum_book(BOOK *head, int num);
+// book 파일에 매개인자로 받은 도서번호와 같은 도서번호가 없으면 -1을 리턴
+// 있으면 head에서 몇번 움직여야 나오는지 리턴하는 함수
 
 void bookname_search(BOOK *head);
 
@@ -155,6 +163,8 @@ void search_menu(CLIENT *client_head);
 
 void booksearch_menu_print(void);
 
+void booksearch_menu(BOOK *book_head);
+
 /////////////////////////////////메뉴 함수 선언 
 
 int my_account = 0; //로그인 정보를 저장할 전역 변수
@@ -164,10 +174,11 @@ int main(void) {
 	BOOK *book_head = book_read();
 	BORROW *borrow_head;
 
+	// remove_book(&book_head, 1);
 	// total_search(book_head);
-	// print_all_client(client_head);
-
-	main_menu(client_head, book_head, borrow_head);
+	// remove_book(&book_head, 2);
+	// total_search(book_head);
+	main_menu(client_head, book_head, borrow_head);	
 
 	return 0;
 }
@@ -408,21 +419,20 @@ void login_client(CLIENT *head){
 		SCAN_STRING(password);
 	}
 	
-	printf("\n>> 로그인 성공 <<\n");
+	printf("\n>> 로그인 되었습니다. <<\n");
 	
 	my_account = res;
 }
 
 void logout_client(void){
-	printf("\n>> 로그아웃 되었습니다.<<\n");
+	printf("\n>> 로그아웃 되었습니다. <<\n");
 	my_account = 0;
 }
 
 void remove_client(CLIENT **head_p){
-	CLIENT *previous = *head_p, *after = *head_p, *temp;
+	CLIENT *previous = *head_p, *after = *head_p, *temp = *head_p;
 	
 	if (my_account == 0){
-		putchar('A');
 		temp = (*head_p) -> next;
 		free((*head_p) -> id);
 		free((*head_p) -> password);
@@ -433,13 +443,23 @@ void remove_client(CLIENT **head_p){
 		(*head_p) = temp;
 	}
 	else {		
-		for (int i = 0; i < my_account - 1; i++){
+		for (int i = 0; i < my_account - 1; i++)
 			previous = previous -> next;
-		}
+	
+		for (int i = 0; i < my_account; i++)
+			temp = temp -> next;
 		
-		for (int i = 0; i < my_account + 1; i++){
+		for (int i = 0; i < my_account + 1; i++)
 			after = after -> next;
-		}
+		
+
+		free(temp -> id);
+		free(temp -> password);
+		free(temp -> name);
+		free(temp -> address);
+		free(temp -> phone_number);
+		free(temp);
+
 		previous -> next = after;
 	}	
 	
@@ -448,15 +468,14 @@ void remove_client(CLIENT **head_p){
 	printf("탈퇴되었습니다.\n");
 }
 		
-void edit_client(CLIENT **head_p){
-	CLIENT *temp = *head_p;
+void edit_client(CLIENT *head){
 
 	char password[20]; //비밀번호
 	char address[100]; //주소
 	char phone_number[20]; //전화번호 
 
 	printf("\n>> 개인정보 수정 <<\n");
-	print_one_client((*head_p), my_account);
+	print_one_client(head, my_account);
 	printf("\n수정할 정보를 입력해주세요\n");
 	printf("비밀번호 : ");	
 	SCAN_STRING(password);
@@ -471,21 +490,19 @@ void edit_client(CLIENT **head_p){
 	address[strlen(address) + 1] = '\0'; //널문자 넣어주기
 
 	for (int i = 0; i < my_account; i++)
-		*head_p = (*head_p) -> next;
+		head = head -> next;
 
-	// free((*head_p) -> name); //왜 이거 안되는지 이해가 안가 ㅡ.ㅡ
-	// free((*head_p) -> address);
-	// free((*head_p) -> phone_number);
+	// free(head -> password);
+	// free(head -> address);
+	// free(head -> phone_number);
 
-	MALLOC_CHAR(*head_p, password); //head -> password에 메모리 할당 
-	MALLOC_CHAR(*head_p, address); //head -> address에 메모리 할당
-	MALLOC_CHAR(*head_p, phone_number); //head -> phone_number에 메모리 할당
+	REALLOC_CHAR(head, password); //head -> password에 메모리 할당 
+	REALLOC_CHAR(head, address); //head -> address에 메모리 할당
+	REALLOC_CHAR(head, phone_number); //head -> phone_number에 메모리 할당
 
-	strcpy((*head_p) -> password, password);
-	strcpy((*head_p) -> address, address);
-	strcpy((*head_p) -> phone_number, phone_number);
-
-	(*head_p) = temp;
+	strcpy(head -> password, password);
+	strcpy(head -> address, address);
+	strcpy(head -> phone_number, phone_number);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -515,7 +532,7 @@ BOOK *book_read(void) { //함수 안에서 book 파일 내용 받아와서 BOOK 
 	// id | password | name | address | phone_number : client 파일 데이터 형식
 	//client 파일에서 한줄 fscanf로 받아와서 자료형에 넣어주기
 
-	fseek(book_ifp, 3, SEEK_SET); // 개같은거 넘기기
+	fseek(book_ifp, 3, SEEK_SET); // UTF-8로 인코딩 된 걸 알려주는 3바이트 넘기기
 
 	while (fscanf(book_ifp, "%u | %[^|] | %[^|] | %[^|] | %s | %[^|] | %c\n", &number, name, publisher, writer, ISBN, location, &borrow) != EOF){
 		add_book(create_book(number, name, publisher, writer, ISBN, location, borrow), &head);
@@ -527,8 +544,7 @@ BOOK *book_read(void) { //함수 안에서 book 파일 내용 받아와서 BOOK 
 	return head;
 }
 
-BOOK *create_book(unsigned number, char name[], char publisher[], char writer[], char
-	ISBN[], char location[], char borrow){
+BOOK *create_book(unsigned number, char name[], char publisher[], char writer[], char ISBN[], char location[], char borrow){
 		BOOK *new_book;
 
 		MALLOC_STRUCT(BOOK, new_book);
@@ -548,7 +564,7 @@ BOOK *create_book(unsigned number, char name[], char publisher[], char writer[],
 		new_book -> borrow = borrow;
 
 		return new_book;
-	}
+}
 
 void add_book(BOOK *new_book, BOOK **head_p){
 	if ((*head_p) -> next == NULL){
@@ -563,6 +579,17 @@ void add_book(BOOK *new_book, BOOK **head_p){
 		new_book -> next = (*head_p) -> next;
 		(*head_p) -> next = new_book;
 	}
+}
+
+void insert_book(BOOK *){
+	unsigned number; //도서번호 (정수 7자리)
+	char *name; //도서명
+	char *publisher; //출판사
+	char *writer; //저자명
+	char *ISBN; //ISBN(정수 13자리)
+	char *location; //소장처
+	char borrow; //대여가능 여부
+	struct book *next; //자기 참조 구조체 구현
 }
 
 BOOK *sort_book(BOOK *head){
@@ -605,131 +632,201 @@ BOOK *sort_book(BOOK *head){
 	return head;
 }
 
-int book_number_check(BOOK *head){
-	
+void save_book(BOOK *head){
+	FILE *book_ofp = fopen(PATH_BOOK, WRITE_MOD);
+	while(head){
+		fprintf(book_ofp, "%07u | %s| %s| %s| %s | %s| %c\n", head -> number, head -> name,
+		head -> publisher, head -> writer, head -> ISBN, head -> location, head -> borrow);
+		head = head -> next;
+	}
+	fclose(book_ofp);
 }
 
-// void bookname_search(BOOK *head){
-//   int i, N;
-//   char bookname[30];
-//   printf("도서명을 입력하세요 : ");
-//   gets(bookname);
-//   N = book_number_check(BOOK *head);
-//   char *ptr[N];
-//   for(i=0 ; i<N ; i++){
-//     ptr[i] = strstr(BOOK->name, bookname);
-//     if(ptr[i]!=NULL){
-//       printf("도서명: %s\n", BOOK->name);
-//       printf("출판사: %s\n", BOOK->publisher);
-//       printf("저자명: %s\n", BOOK->writer);
-//       printf("ISBN: %s\n", BOOK->ISBN);
-//       printf("소장처: %s\n", BOOK->location);
-//       printf("대여가능 여부: %s\n", BOOK.borrow); //TODO (n/2)는 borrow기능 만들고 해야함
-//       printf("** Y는 대여가능, N은 대여불가를 의미\n");
-//       printf("** (x/y) : (대여된 총 권수 / 보유하고 있는 총 권수)\n",);
-//     }
-//     BOOK = BOOK->next;
-//   }
-// }
+void remove_book(BOOK **head_p, int position){
+	BOOK *previous = *head_p, *after = *head_p, *temp = *head_p;
 
-// void publisher_search(BOOK *head){
-//   int i, N;
-//   char publishername[30];
-//   printf("출판사를 입력하세요 : ");
-//   gets(publishername);
-//   N = book_number_check(BOOK *head);
-//   char *ptr[N];
-//   for(i=0 ; i<N ; i++){
-//     ptr[i] = strstr(BOOK->name, bookname);
-//     if(ptr[i]!=NULL){
-//       printf("도서명: %s\n", BOOK->name);
-//       printf("출판사: %s\n", BOOK->publisher);
-//       printf("저자명: %s\n", BOOK->writer);
-//       printf("ISBN: %s\n", BOOK->ISBN);
-//       printf("소장처: %s\n", BOOK->location);
-//       printf("대여가능 여부: %s\n", BOOK.borrow); //TODO (n/2)는 borrow기능 만들고 해야함
-//       printf("** Y는 대여가능, N은 대여불가를 의미\n");
-//       printf("** (x/y) : (대여된 총 권수 / 보유하고 있는 총 권수)\n",);
-//     }
-//     BOOK = BOOK->next;
-//   }
-// }
+	if (position == 0){
+		temp = ((*head_p) -> next);
+		free((*head_p) -> name);
+		free((*head_p) -> publisher);
+		free((*head_p) -> writer);
+		free((*head_p) -> ISBN);
+		free((*head_p) -> location);
+		free((*head_p));
+		(*head_p) = temp;		
+	}
+	else {
+		for (int i = 0; i < position - 1; i++)
+			previous = previous -> next;
+		
+		for (int i = 0; i < position; i++)
+			temp = temp -> next;
+		
+		for (int i = 0; i < position + 1; i++)
+			after = after -> next;
+		
 
-// void ISBN_search(BOOK *head){
-//   int i, N;
-//   char ISBN_num[30];
-//   printf("ISBN을 입력하세요 : ");
-//   gets(ISBN_num);
-//   N = book_number_check(BOOK *head);
-//   char *ptr[N];
-//   for(i=0 ; i<N ; i++){
-//     ptr[i] = strstr(BOOK->name, bookname);
-//     if(ptr[i]!=NULL){
-//       printf("도서명: %s\n", BOOK->name);
-//       printf("출판사: %s\n", BOOK->publisher);
-//       printf("저자명: %s\n", BOOK->writer);
-//       printf("ISBN: %s\n", BOOK->ISBN);
-//       printf("소장처: %s\n", BOOK->location);
-//       printf("대여가능 여부: %s\n", BOOK.borrow); //TODO (n/2)는 borrow기능 만들고 해야함
-//       printf("** Y는 대여가능, N은 대여불가를 의미\n");
-//       printf("** (x/y) : (대여된 총 권수 / 보유하고 있는 총 권수)\n",);
-//     }
-//     BOOK = BOOK->next;
-//   }
-// }
+		free(temp -> name);
+		free(temp -> publisher);
+		free(temp -> writer);	
+		free(temp -> ISBN);
+		free(temp -> location);
+		free(temp);
 
-// void writer_search(BOOK *head){
-//   int i, N;
-//   char writername[30];
-//   printf("저자명을 입력하세요 : ");
-//   gets(writername);
-//   N = book_number_check(BOOK *head);
-//   char *ptr[N];
-//   for(i=0 ; i<N ; i++){
-//     ptr[i] = strstr(BOOK->name, bookname);
-//     if(ptr[i]!=NULL){
-//       printf("도서명: %s\n", BOOK->name);
-//       printf("출판사: %s\n", BOOK->publisher);
-//       printf("저자명: %s\n", BOOK->writer);
-//       printf("ISBN: %s\n", BOOK->ISBN);
-//       printf("소장처: %s\n", BOOK->location);
-//       printf("대여가능 여부: %s\n", BOOK.borrow); //TODO (n/2)는 borrow기능 만들고 해야함
-//       printf("** Y는 대여가능, N은 대여불가를 의미\n");
-//       printf("** (x/y) : (대여된 총 권수 / 보유하고 있는 총 권수)\n",);
-//     }
-//     BOOK = BOOK->next;
-//   }
-// }
+		previous -> next = after;
+	}
+}
 
-// void total_search(BOOK *head){
-//   int i;
-//   N = book_number_check(BOOK *head);
-//   char *ptr[N];
-//   for(i=0 ; i<N ; i++){
-//     if(ptr[i]!=NULL){
-//       printf("도서명: %s | ", BOOK->name);
-//       printf("출판사: %s | ", BOOK->publisher);
-//       printf("저자명: %s | ", BOOK->writer);
-//       printf("ISBN: %s | ", BOOK->ISBN);
-//       printf("소장처: %s | ", BOOK->location);
-//       printf("대여가능 여부: %s | ", BOOK.borrow); //TODO (n/2)는 borrow기능 만들고 해야함
-//       printf("** Y는 대여가능, N은 대여불가를 의미\n");
-//       printf("** (x/y) : (대여된 총 권수 / 보유하고 있는 총 권수)\n",);
-//     }
-//     BOOK = BOOK->next;
-//   }
-// }
+int book_number_check(BOOK *head){
+	int res = 0;
+	char ISBN[20];
+
+	strcpy(ISBN, head -> ISBN);
+
+	while (!strcmp(head -> ISBN, ISBN)){
+		res++;
+		if (!head -> next)
+			return res;
+		head = head -> next;
+	}
+
+	return res;
+}
+
+int checknum_book(BOOK *head, int number){
+	int res = -1;
+	int cnt = 0;
+
+	while(head){
+		if (head -> number == number)
+			res = cnt;
+		head = head -> next;
+		cnt++;
+	}
+
+	return res;
+}
+
+void bookname_search(BOOK *head){
+	BOOK *temp = head;
+
+	char bookname[70];
+	int number, i;
+
+	printf("\n검색할 도서 이름 : ");
+	gets(bookname);
+	while(temp){
+		if (strstr(temp -> name, bookname)){
+			number = book_number_check(temp);
+
+			printf("\n도서명: %s\n", temp -> name);
+			printf("출판사: %s\n", temp -> publisher);
+			printf("저자명: %s\n", temp -> writer);
+			printf("ISBN: %s\n", temp -> ISBN);
+			printf("소장처: %s\n", temp -> location);
+			printf("대여가능 여부: %c\n", temp -> borrow); //TODO (n/2)는 borrow기능 만들고 해야함
+			printf("** Y는 대여가능, N은 대여불가를 의미\n");
+			printf("** (x/y) : (대여된 총 권수 / %d)\n", number);
+
+			for (i = 0; i < number - 1; i++)
+				temp = temp -> next;
+		}
+		temp = temp -> next;
+	}
+	printf("\n>> 검색이 끝났습니다 <<\n");
+}
+
+void publisher_search(BOOK *head){
+	BOOK *temp = head;
+
+	char publishername[70];
+	int number, i;
+
+	printf("\n출판사를 입력하세요 : ");
+	gets(publishername);
+	while (temp){
+		if (strstr(temp -> publisher, publishername)){
+			number = book_number_check(temp);
+			printf("\n도서명: %s\n", temp -> name);
+			printf("출판사: %s\n", temp -> publisher);
+			printf("저자명: %s\n", temp -> writer);
+			printf("ISBN: %s\n", temp -> ISBN);
+			printf("소장처: %s\n", temp -> location);
+			printf("대여가능 여부: %c\n", temp -> borrow); //TODO (n/2)는 borrow기능 만들고 해야함
+			printf("** Y는 대여가능, N은 대여불가를 의미\n");
+			printf("** (x/y) : (대여된 총 권수 / %d)\n", number);
+			for (i = 0; i < number - 1; i++)
+				temp = temp -> next;
+		}
+		temp = temp -> next;
+	}
+	printf("\n>> 검색이 끝났습니다 <<\n");
+}
+
+void ISBN_search(BOOK *head){
+	BOOK *temp = head;
+
+	char ISBNnum[70];
+	int number,i;
+
+	printf("\nISBN을 입력하세요 : ");
+	gets(ISBNnum);
+	while (temp){
+	if (strstr(temp -> ISBN, ISBNnum)){
+		number = book_number_check(temp);
+		printf("\n도서명: %s\n", temp -> name);
+		printf("출판사: %s\n", temp -> publisher);
+		printf("저자명: %s\n", temp -> writer);
+		printf("ISBN: %s\n", temp -> ISBN);
+		printf("소장처: %s\n", temp -> location);
+		printf("대여가능 여부: %c\n", temp -> borrow); //TODO (n/2)는 borrow기능 만들고 해야함
+		printf("** Y는 대여가능, N은 대여불가를 의미\n");
+		printf("** (x/y) : (대여된 총 권수 / %d)\n", number);
+		for(i = 0; i < number - 1; i++)
+			temp = temp -> next;
+	}
+	temp = temp -> next;
+	}
+	printf("\n>> 검색이 끝났습니다 <<\n");	
+}
+
+void writer_search(BOOK *head){
+	BOOK *temp = head;
+
+	char writername[70];
+
+	int number, i;
+
+	printf("\n저자명을 입력하세요 : ");
+	gets(writername);
+	while (temp){
+		if (strstr(temp -> writer, writername)){
+			number = book_number_check(temp);
+			printf("\n도서명: %s\n", temp -> name);
+			printf("출판사: %s\n", temp -> publisher);
+			printf("저자명: %s\n", temp -> writer);
+			printf("ISBN: %s\n", temp -> ISBN);
+			printf("소장처: %s\n", temp -> location);
+			printf("대여가능 여부: %c\n", temp -> borrow); 
+			printf("** Y는 대여가능, N은 대여불가를 의미\n");
+			printf("** (x/y) : (대여된 총 권수 / %d)\n", number);
+			for(i = 0; i < number - 1; i++){
+				temp = temp -> next;
+			}
+		}
+		temp = temp -> next;
+	}
+	printf("\n>> 검색이 끝났습니다 <<\n");
+}
 
 void total_search(BOOK *head){
 	while(head){
-		printf("%u | %s| %s| %s| %s | %s| %c\n", head -> number, head -> name,
+		printf("%07u | %s| %s| %s| %s | %s| %c\n", head -> number, head -> name,
 		head -> publisher, head -> writer, head -> ISBN, head -> location,
 		head -> borrow);
 		head = head -> next;
 	}
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -738,7 +835,6 @@ void main_menu_print(void){ // 메뉴 프린트 함수
    printf("1. 회원가입   2. 로그인   3. 프로그램 종료\n");
    printf("번호를 선택하세요 : ");
 }
-
 
 void main_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){ // 초기 메인 메뉴
 	int num;
@@ -786,13 +882,14 @@ void client_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){ //�
 		CLEAR_BUFFER;
 		switch(num){
 			case 1:
+				booksearch_menu(book_head);
 				//도서검색
 				break;
 			case 2:
 				//내 대여 목록
 				break;
 			case 3:
-				edit_client(&client_head);
+				edit_client(client_head);
 				save_client(client_head);
 				//개인정보 수정
 				break;
@@ -844,6 +941,7 @@ void admin_menu(CLIENT *client_head, BOOK *book_head, BORROW *borrow_head){
 				//도서 반납
 				break;
 			case 5:
+				booksearch_menu(book_head);
 				//도서 검색
 				break;
 			case 6:
@@ -913,10 +1011,48 @@ void search_menu(CLIENT *client_head){
 }
 
 void booksearch_menu_print(void){
-   printf(">> 도서 검색 <<\n");
+   printf("\n>> 도서 검색 <<\n");
    printf("1. 도서명 검색 2. 출판사 검색\n");
    printf("3. ISBN 검색 4. 저자명 검색\n");
    printf("5. 전체 검색 6. 이전 메뉴\n");
+}
+
+void booksearch_menu(BOOK *book_head){
+	int num;
+	while(1){
+		booksearch_menu_print();
+		scanf("%d", &num);
+		CLEAR_BUFFER;
+		switch(num){
+			case 1:
+				bookname_search(book_head);
+				//도서명 검색
+				break;
+			case 2:
+				publisher_search(book_head);
+				//출판사 검색
+				break;
+			case 3:
+				ISBN_search(book_head);
+				//ISBN 검색
+				break;
+			case 4:
+				writer_search(book_head);
+				//저자명 검색
+				break;
+			case 5:
+				total_search(book_head);
+				//전체 검색
+				break;
+			case 6:
+				return;
+				//프로그램 종료
+			default :
+				printf("잘못된 번호입니다. 다시 입력하세요");
+				sleep(2);
+				system("clear");
+		}
+	}
 }
 
    		
