@@ -127,7 +127,7 @@ void save_book(BOOK *head);
 
 void remove_book(BOOK **head_p, int location);
 
-int book_number_check(BOOK *head);
+unsigned book_number_check(BOOK *head);
 
 int checknum_book(BOOK *head, int num);
 // book 파일에 매개인자로 받은 도서번호와 같은 도서번호가 없으면 -1을 리턴
@@ -590,6 +590,8 @@ void insert_book(BOOK *head){
 	char *location; //소장처
 	char borrow; //대여가능 여부
 
+	number = max_book_number(head) + 1;
+	
 
 }
 
@@ -678,7 +680,7 @@ void remove_book(BOOK **head_p, int position){
 	}
 }
 
-int book_number_check(BOOK *head){
+unsigned book_number_check(BOOK *head){
 	int res = 0;
 	char ISBN[20];
 
