@@ -133,6 +133,10 @@ int checknum_book(BOOK *head, int num);
 // book 파일에 매개인자로 받은 도서번호와 같은 도서번호가 없으면 -1을 리턴
 // 있으면 head에서 몇번 움직여야 나오는지 리턴하는 함수
 
+int max_booknumber(BOOK *head);
+// 도서번호 최대가 몇인지 리턴해주는 함수
+// 도서 삽입할 때 여기서 +1한거 넣어줘야 함
+
 void bookname_search(BOOK *head);
 
 void publisher_search(BOOK *head);
@@ -174,11 +178,7 @@ int main(void) {
 	BOOK *book_head = book_read();
 	BORROW *borrow_head;
 
-	// remove_book(&book_head, 1);
-	// total_search(book_head);
-	// remove_book(&book_head, 2);
-	// total_search(book_head);
-	main_menu(client_head, book_head, borrow_head);	
+	// main_menu(client_head, book_head, borrow_head);	
 
 	return 0;
 }
@@ -581,7 +581,7 @@ void add_book(BOOK *new_book, BOOK **head_p){
 	}
 }
 
-void insert_book(BOOK *){
+void insert_book(BOOK *head){
 	unsigned number; //도서번호 (정수 7자리)
 	char *name; //도서명
 	char *publisher; //출판사
@@ -589,7 +589,8 @@ void insert_book(BOOK *){
 	char *ISBN; //ISBN(정수 13자리)
 	char *location; //소장처
 	char borrow; //대여가능 여부
-	struct book *next; //자기 참조 구조체 구현
+
+
 }
 
 BOOK *sort_book(BOOK *head){
@@ -702,6 +703,18 @@ int checknum_book(BOOK *head, int number){
 			res = cnt;
 		head = head -> next;
 		cnt++;
+	}
+
+	return res;
+}
+
+int max_book_number(BOOK *head){
+	int res = head -> number;
+
+	while(head){
+		if(head -> number > res)
+			res = head -> number;
+		head = head -> next;
 	}
 
 	return res;
